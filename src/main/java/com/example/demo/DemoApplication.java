@@ -9,6 +9,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import static org.quartz.JobBuilder.newJob;
+import static org.quartz.JobKey.jobKey;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
@@ -24,13 +25,19 @@ public class DemoApplication {
 		scheduler.start();
 
 		// define the job and tie it to our MyJob class
-		JobDetail jobDetail = newJob(MyJob.class).withIdentity("job1", "group1").build();
+		JobDetail jobDetail = newJob(MyJob.class).withIdentity("job1", "group1").storeDurably().build();
 		// Trigger the job to run now, and then repeat every 10 seconds forever
 		Trigger trigger = newTrigger().withIdentity("trigger1", "group1")
 				.startNow()
 				.withSchedule(simpleSchedule().withIntervalInSeconds(10).repeatForever())
 				.build();
+		Trigger trigger2 = newTrigger().withIdentity("trigger2", "group1")
+				.forJob(jobKey("job1", "group1"))
+				.startNow()
+				.withSchedule(simpleSchedule().withIntervalInSeconds(10).repeatForever())
+				.build();
 		// Tell quartz to schedule the job using our trigger
 		scheduler.scheduleJob(jobDetail, trigger);
+		scheduler.scheduleJob(trigger2);
 	}
 }
